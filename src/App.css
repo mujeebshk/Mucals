@@ -1,0 +1,714 @@
+.app-shell {
+    width: min(1200px, calc(100% - 1.5rem));
+    margin: 0 auto;
+    padding: 1.5rem 0 3rem;
+    color: var(--text);
+}
+
+.hero-card {
+    background: var(--surface);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    border-radius: 24px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 24px 80px var(--shadow);
+}
+
+.hero-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+}
+
+.theme-toggle {
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    background: rgba(67, 56, 202, 0.1);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: rgba(67, 56, 202, 0.18);
+    transform: translateY(-1px);
+}
+
+.eyebrow {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.hero-card h1 {
+    margin: 0 0 0.75rem;
+    font-size: clamp(2rem, 3vw, 3rem);
+    line-height: 1.05;
+}
+
+.hero-copy {
+    margin: 0;
+    max-width: 44rem;
+    color: var(--muted);
+}
+
+.dashboard {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.dashboard-card {
+    background: var(--surface);
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    box-shadow: 0 10px 40px var(--shadow);
+}
+
+.card-header {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.overview-card .card-header {
+    align-items: center;
+}
+
+.card-header>div {
+    flex: 1;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.card-header p {
+    margin: 0.5rem 0 0;
+    color: var(--muted);
+}
+
+.card-header .calendar-icon-btn {
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+
+.audio-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.audio-item {
+    padding: 1rem;
+    border-radius: 20px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+}
+
+.audio-item h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+}
+
+.audio-item p {
+    margin: 0 0 0.75rem;
+    color: var(--secondary);
+    font-size: 0.95rem;
+}
+
+.hijri-grid,
+.notes-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.hijri-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 18px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+}
+
+.hijri-entry strong {
+    color: var(--text);
+}
+
+.current-hijri {
+    background: var(--surface-strong);
+    border: 1px solid rgba(199, 210, 254, 0.32);
+    font-size: 1.1rem;
+}
+
+.current-hijri strong {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.location-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.location-card p {
+    margin: 0;
+    color: var(--text);
+}
+
+.location-status {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.location-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+}
+
+.location-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 8px;
+    border: none;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+    white-space: nowrap;
+}
+
+.location-full {
+    display: block;
+}
+
+.location-area {
+    display: none;
+}
+
+.location-pill:hover {
+    background: rgba(99, 102, 241, 0.18);
+    transform: translateY(-1px);
+}
+
+.weather-pill-container {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.weather-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 50px;
+    padding: 0.4rem 0.65rem;
+    border-radius: 8px;
+    border: none;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.weather-pill.loading,
+.weather-pill.error {
+    background: rgba(148, 163, 184, 0.12);
+    border-color: rgba(148, 163, 184, 0.24);
+    color: var(--muted);
+}
+
+.location-pill:focus,
+.weather-pill:focus {
+    outline: 2px solid rgba(99, 102, 241, 0.32);
+    outline-offset: 2px;
+}
+
+.location-link,
+.weather-section,
+.weather-info,
+.temperature {
+    display: none;
+}
+
+.notes-panel textarea {
+    min-height: 220px;
+    width: 100%;
+    resize: vertical;
+    border-radius: 18px;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    background: var(--surface-alt);
+    color: var(--text);
+}
+
+.notes-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.hijri-calendar-container {
+    position: relative;
+}
+
+.hijri-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.hijri-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    flex: 1;
+}
+
+.hijri-header h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.calendar-icon-btn {
+    background: var(--surface-alt);
+    border: 2px solid var(--border);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.calendar-icon-btn:hover {
+    border-color: var(--accent);
+    background: rgba(129, 140, 248, 0.1);
+}
+
+.calendar-icon-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.calendar-view {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.month-info {
+    text-align: center;
+}
+
+.month-info h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+}
+
+.month-info h5 {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.calendar-header h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    min-width: 120px;
+    text-align: center;
+}
+
+.month-nav-btn {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.month-nav-btn:hover {
+    background: rgba(129, 140, 248, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.month-calendar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(40px, 1fr));
+    gap: 0.3rem;
+}
+
+.weekdays {
+    display: contents;
+}
+
+.weekday {
+    padding: 0.4rem 0;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-bottom: 1.5px solid var(--accent);
+}
+
+.calendar-dates {
+    display: contents;
+}
+
+.date-cell {
+    aspect-ratio: 1 / 1.2;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.35rem;
+    background: var(--surface-alt);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.2rem;
+    min-height: 80px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.date-cell.empty {
+    background: transparent;
+    border: none;
+}
+
+.date-cell.today {
+    background: rgba(129, 140, 248, 0.18);
+    border-color: var(--accent);
+    border-width: 1.5px;
+}
+
+.gregorian-date {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.hijri-date {
+    font-size: 0.65rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.holidays {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    width: 100%;
+}
+
+.holiday-name {
+    font-size: 0.55rem;
+    color: var(--muted);
+    font-weight: 500;
+    text-align: center;
+    line-height: 1;
+    word-wrap: break-word;
+}
+
+@media (max-width: 640px) {
+    .app-shell {
+        width: 100%;
+        padding: 0.75rem 0 2rem;
+    }
+
+    .hero-card {
+        margin: 0 .5em;
+        padding: 0.85rem;
+        margin-bottom: 0.75rem;
+        border-radius: 16px;
+    }
+
+    .hero-header {
+        gap: 0.75rem;
+    }
+
+    .hero-actions {
+        gap: 0.3rem;
+    }
+
+    .eyebrow {
+        font-size: 0.75rem;
+        margin: 0 0 0.35rem;
+    }
+
+    .hero-card h1 {
+        font-size: clamp(1.3rem, 6vw, 1.8rem);
+        margin: 0 0 0.4rem;
+    }
+
+    .hero-copy {
+        font-size: 0.85rem;
+        line-height: 1.35;
+    }
+
+    .location-pill {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.55rem;
+        gap: 0.2rem;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    .location-full {
+        display: none;
+    }
+
+    .location-area {
+        display: block;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    .weather-pill {
+        min-width: 42px;
+        font-size: 0.75rem;
+        padding: 0.3rem 0.5rem;
+    }
+
+    .theme-toggle {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.5rem;
+    }
+
+    .dashboard {
+        gap: 0.75rem;
+        padding: 0 0.5rem;
+    }
+
+    .dashboard-card {
+        padding: 0.9rem;
+        border-radius: 14px;
+    }
+
+    .card-header {
+        gap: 0.6rem;
+        margin-bottom: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .card-header h2 {
+        font-size: 1rem;
+    }
+
+    .card-header p {
+        font-size: 0.8rem;
+        margin: 0.25rem 0 0;
+        width: 100%;
+    }
+
+    .audio-item {
+        padding: 0.75rem;
+        border-radius: 12px;
+    }
+
+    .audio-item h3 {
+        font-size: 0.9rem;
+    }
+
+    .audio-item p {
+        font-size: 0.75rem;
+        margin: 0 0 0.5rem;
+    }
+
+    .hijri-entry {
+        padding: 0.75rem;
+        border-radius: 12px;
+        gap: 0.4rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hijri-entry strong {
+        font-size: 0.9rem;
+        width: 100%;
+    }
+
+    .current-hijri {
+        font-size: 0.95rem;
+    }
+
+    .notes-panel textarea {
+        min-height: 120px;
+        padding: 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+    }
+
+    .calendar-icon-btn {
+        font-size: 0.95rem;
+        padding: 0.35rem;
+    }
+
+    .location-card-top {
+        gap: 0.2rem;
+    }
+
+    .weather-pill-container {
+        gap: 0.2rem;
+    }
+
+    .month-calendar {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.2rem;
+    }
+
+    .date-cell {
+        aspect-ratio: 1 / 1.1;
+        padding: 0.25rem 0.15rem;
+        min-height: auto;
+        font-size: 0.65rem;
+        gap: 0.1rem;
+    }
+
+    .gregorian-date {
+        font-size: 0.7rem;
+    }
+
+    .hijri-date {
+        font-size: 0.55rem;
+    }
+
+    .holiday-name {
+        font-size: 0.45rem;
+    }
+
+    .weekday {
+        padding: 0.25rem 0;
+        font-size: 0.6rem;
+    }
+
+    .calendar-header h4 {
+        font-size: 0.85rem;
+        min-width: 80px;
+    }
+
+    .month-nav-btn {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.5rem;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 859px) {
+    .app-shell {
+        padding: 1.25rem 0 2.5rem;
+    }
+
+    .hero-card {
+        padding: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .dashboard {
+        gap: 1.15rem;
+    }
+
+    .dashboard-card {
+        padding: 1.25rem;
+        border-radius: 20px;
+    }
+
+    .card-header h2 {
+        font-size: 1.15rem;
+    }
+
+    .hero-card h1 {
+        font-size: clamp(1.75rem, 4vw, 2.4rem);
+    }
+}
+
+@media (min-width: 860px) {
+    .app-shell {
+        width: min(1200px, calc(100% - 2rem));
+        padding: 2rem 0 3rem;
+    }
+
+    .hero-card {
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .dashboard {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 1.5rem;
+    }
+
+    .overview-card {
+        grid-column: 1 / -1;
+    }
+
+    .card-header h2 {
+        font-size: 1.25rem;
+    }
+}
