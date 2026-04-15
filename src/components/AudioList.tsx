@@ -5,15 +5,50 @@ type Props = {
 };
 
 function AudioList({ audios }: Props) {
+  const getAudioSource = (audio: AudioItem): string => {
+    return audio.type === "quran" ? audio.AudioUrl : audio.audioSrc;
+  };
+
+  const getCategoryBadge = (category: string): string => {
+    const badges: Record<string, string> = {
+      peaceful: "🕯️",
+      spiritual: "✨",
+      evening: "🌙",
+      morning: "🌅",
+      inspirational: "💫",
+    };
+    return badges[category] || "♫";
+  };
+
   return (
     <div className="audio-list">
       {audios.map((audio) => (
         <article key={audio.id} className="audio-item">
-          <div>
-            <h3>{audio.title}</h3>
-            <p>{audio.description}</p>
+          <div className="audio-header">
+            <div>
+              <h3>{audio.title}</h3>
+              {audio.type === "nasheed" ? (
+                <div className="audio-meta">
+                  <span className="audio-artist">{audio.artist}</span>
+                  <span className="audio-badge">
+                    {getCategoryBadge(audio.category)} {audio.category}
+                  </span>
+                </div>
+              ) : (
+                <div className="audio-meta">
+                  <span className="audio-surah">
+                    📖 {audio.surah.englishName} (Surah {audio.surah.number})
+                  </span>
+                  <span className="audio-verses">
+                    Verses {audio.startVerse}-{audio.endVerse}
+                  </span>
+                  <span className="audio-reciter">🎤 {audio.reciter}</span>
+                </div>
+              )}
+              <p className="audio-description">{audio.description || audio.audioSrc}</p>
+            </div>
           </div>
-          <audio controls preload="none" src={audio.audioSrc}>
+          <audio controls preload="none" src={getAudioSource(audio)}>
             Your browser does not support the audio element.
           </audio>
         </article>

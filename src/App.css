@@ -125,15 +125,66 @@
     border: 1px solid var(--border);
 }
 
-.audio-item h3 {
-    margin: 0 0 0.25rem;
-    font-size: 1rem;
+.audio-header {
+    margin-bottom: 0.85rem;
 }
 
-.audio-item p {
-    margin: 0 0 0.75rem;
+.audio-item h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.audio-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.audio-artist {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.audio-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.audio-surah {
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: block;
+}
+
+.audio-verses {
+    color: var(--muted);
+    font-size: 0.85rem;
+    display: block;
+}
+
+.audio-reciter {
+    color: var(--muted);
+    font-size: 0.85rem;
+    display: block;
+}
+
+.audio-description {
+    margin: 0.5rem 0 0;
     color: var(--secondary);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .hijri-grid,
@@ -573,6 +624,27 @@
     .audio-item p {
         font-size: 0.75rem;
         margin: 0 0 0.5rem;
+    }
+
+    .audio-meta {
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .audio-artist,
+    .audio-surah,
+    .audio-verses,
+    .audio-reciter {
+        font-size: 0.75rem;
+    }
+
+    .audio-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.55rem;
+    }
+
+    .audio-description {
+        font-size: 0.8rem;
     }
 
     .hijri-entry {
