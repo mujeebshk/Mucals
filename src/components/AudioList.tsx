@@ -1,10 +1,12 @@
-import type { AudioItem } from "../data/sampleAudios";
+import type { AudioItem, Nasheed } from "../data/sampleAudios";
 
 type Props = {
   audios: AudioItem[];
 };
 
 function AudioList({ audios }: Props) {
+  const isNasheed = (audio: AudioItem): audio is Nasheed => audio.type === "nasheed";
+
   const getAudioSource = (audio: AudioItem): string => {
     return audio.type === "quran" ? audio.AudioUrl : audio.audioSrc;
   };
@@ -27,7 +29,7 @@ function AudioList({ audios }: Props) {
           <div className="audio-header">
             <div>
               <h3>{audio.title}</h3>
-              {audio.type === "nasheed" ? (
+              {isNasheed(audio) ? (
                 <div className="audio-meta">
                   <span className="audio-artist">{audio.artist}</span>
                   <span className="audio-badge">
@@ -45,7 +47,9 @@ function AudioList({ audios }: Props) {
                   <span className="audio-reciter">🎤 {audio.reciter}</span>
                 </div>
               )}
-              <p className="audio-description">{audio.description || audio.audioSrc}</p>
+              <p className="audio-description">
+                {isNasheed(audio) ? audio.description : `Reciter: ${audio.reciter}`}
+              </p>
             </div>
           </div>
           <audio controls preload="none" src={getAudioSource(audio)}>
