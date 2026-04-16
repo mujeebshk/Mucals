@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from "react";
-import type { AudioCategory, SavedAudioLink } from "../data/sampleAudios";
-import { createSavedAudioLink } from "../utils/audioSources";
+import type { AudioCategory } from "../data/sampleAudios";
+import type { CreateSavedAudioInput } from "../utils/audioSources";
 
 type Props = {
-  onAddAudio: (audio: SavedAudioLink) => void;
+  disabled?: boolean;
+  helperText?: string | null;
+  onAddAudio: (audio: CreateSavedAudioInput) => Promise<void> | void;
 };
 
 const categories: AudioCategory[] = [
@@ -14,7 +16,11 @@ const categories: AudioCategory[] = [
   "inspirational",
 ];
 
-function AudioSubmissionForm({ onAddAudio }: Props) {
+function AudioSubmissionForm({
+  disabled = false,
+  helperText = null,
+  onAddAudio,
+}: Props) {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [artist, setArtist] = useState("");
@@ -22,6 +28,7 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
   const [category, setCategory] = useState<AudioCategory>("peaceful");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const resetForm = () => {
     setTitle("");
@@ -31,7 +38,7 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
     setCategory("peaceful");
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!title.trim() || !url.trim()) {
@@ -41,19 +48,16 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
     }
 
     try {
-      const savedAudio = createSavedAudioLink({
+      setSubmitting(true);
+      await onAddAudio({
         title,
         url,
         category,
         artist,
         description,
       });
-
-      onAddAudio(savedAudio);
       setError(null);
-      setFeedback(
-        `Saved ${savedAudio.provider} link in ${savedAudio.category} category.`,
-      );
+      setFeedback(`Saved your source in the ${category} category.`);
       resetForm();
     } catch (submitError) {
       setFeedback(null);
@@ -62,6 +66,8 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
           ? submitError.message
           : "Could not save this source link.",
       );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -83,6 +89,7 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Quiet recitation for evening"
+            disabled={disabled || submitting}
           />
         </label>
 
@@ -93,6 +100,7 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
             onChange={(event) =>
               setCategory(event.target.value as AudioCategory)
             }
+            disabled={disabled || submitting}
           >
             {categories.map((item) => (
               <option key={item} value={item}>
@@ -109,6 +117,7 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
             value={url}
             onChange={(event) => setUrl(event.target.value)}
             placeholder="https://www.youtube.com/watch?v=..."
+            disabled={disabled || submitting}
           />
         </label>
 
@@ -119,6 +128,7 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
             value={artist}
             onChange={(event) => setArtist(event.target.value)}
             placeholder="Optional"
+            disabled={disabled || submitting}
           />
         </label>
 
@@ -129,6 +139,7 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Optional note for later"
+            disabled={disabled || submitting}
           />
         </label>
       </div>
@@ -138,9 +149,12 @@ function AudioSubmissionForm({ onAddAudio }: Props) {
           Direct audio links play in the built-in player. YouTube, Spotify, and
           Instagram use inline embeds when available.
         </p>
-        <button type="submit">Save Source</button>
+        <button type="submit" disabled={disabled || submitting}>
+          {submitting ? "Saving..." : "Save Source"}
+        </button>
       </div>
 
+      {helperText ? <p className="audio-form-helper">{helperText}</p> : null}
       {feedback ? <p className="audio-form-success">{feedback}</p> : null}
       {error ? <p className="audio-form-error">{error}</p> : null}
     </form>

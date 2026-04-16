@@ -4,8 +4,6 @@ import type {
   SavedAudioLink,
 } from "../data/sampleAudios";
 
-export const SAVED_AUDIO_STORAGE_KEY = "mucals-saved-audio-links";
-
 export type CreateSavedAudioInput = {
   title: string;
   url: string;
@@ -90,36 +88,6 @@ export function createSavedAudioLink(
     playableUrl: resolved.playableUrl,
     savedAt: new Date().toISOString(),
   };
-}
-
-export function loadSavedAudioLinks(): SavedAudioLink[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  const raw = window.localStorage.getItem(SAVED_AUDIO_STORAGE_KEY);
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(isSavedAudioLinkShape);
-  } catch {
-    return [];
-  }
-}
-
-export function saveSavedAudioLinks(items: SavedAudioLink[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(SAVED_AUDIO_STORAGE_KEY, JSON.stringify(items));
 }
 
 export function getProviderLabel(provider: AudioProvider): string {
@@ -222,24 +190,4 @@ function getDefaultDescription(
   }
 
   return `Saved ${getProviderLabel(provider).toLowerCase()} for quick access later.`;
-}
-
-function isSavedAudioLinkShape(value: unknown): value is SavedAudioLink {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const item = value as Partial<SavedAudioLink>;
-  return (
-    typeof item.id === "string" &&
-    typeof item.title === "string" &&
-    item.type === "saved" &&
-    typeof item.category === "string" &&
-    typeof item.artist === "string" &&
-    typeof item.description === "string" &&
-    typeof item.sourceUrl === "string" &&
-    typeof item.provider === "string" &&
-    typeof item.playbackMode === "string" &&
-    typeof item.savedAt === "string"
-  );
 }

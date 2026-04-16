@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
+import type { User } from "firebase/auth";
+import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import AudioList from "./components/AudioList";
 import AudioSubmissionForm from "./components/AudioSubmissionForm";
+import AuthMenu from "./components/AuthMenu";
 import HijriCalendar from "./components/HijriCalendar";
 import LocationCard from "./components/LocationCard";
 import NotesPanel from "./components/NotesPanel";
 import "./App.css";
 import audioData from "./data/sampleAudios";
-import type { AudioItem, SavedAudioLink } from "./data/sampleAudios";
+import type { SavedAudioLink } from "./data/sampleAudios";
+import { auth, googleProvider, isFirebaseConfigured } from "./lib/firebase";
 import {
-  loadSavedAudioLinks,
-  saveSavedAudioLinks,
-} from "./utils/audioSources";
+  createSavedAudioForUser,
+  deleteSavedAudioForUser,
+  listSavedAudios,
+} from "./services/savedAudioService";
+import type { CreateSavedAudioInput } from "./utils/audioSources";
 
 type LocationState = {
   loading: boolean;
@@ -20,7 +26,6 @@ type LocationState = {
 };
 
 function App() {
-  const today = useMemo(() => new Date(), []);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") {
       return "light";
@@ -38,24 +43,19 @@ function App() {
 
   const [showCalendarView, setShowCalendarView] = useState(false);
 
-  const [audios, setAudios] = useState<AudioItem[]>(audioData);
-  const [savedAudios, setSavedAudios] = useState<SavedAudioLink[]>(() =>
-    loadSavedAudioLinks(),
-  );
+  const [savedAudios, setSavedAudios] = useState<SavedAudioLink[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(isFirebaseConfigured);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const allAudios = useMemo(
-    () => [...savedAudios, ...audios],
-    [audios, savedAudios],
-  );
+  const allAudios = useMemo(() => [...savedAudios, ...audioData], [savedAudios]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("mucals-theme", theme);
   }, [theme]);
-
-  useEffect(() => {
-    saveSavedAudioLinks(savedAudios);
-  }, [savedAudios]);
 
   useEffect(() => {
     const fallbackToIpLocation = async () => {
@@ -112,19 +112,91 @@ function App() {
   const toggleTheme = () =>
     setTheme((current) => (current === "light" ? "dark" : "light"));
 
-  const addSavedAudio = (audio: SavedAudioLink) => {
-    setSavedAudios((current) => [audio, ...current]);
+  useEffect(() => {
+    if (!auth) {
+      setAuthLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+      setUser(nextUser);
+      setAuthLoading(false);
+
+      if (!nextUser) {
+        setSavedAudios([]);
+        return;
+      }
+
+      setAudioLoading(true);
+      setAudioError(null);
+
+      try {
+        const items = await listSavedAudios(nextUser.uid);
+        setSavedAudios(items);
+      } catch (error) {
+        console.error("Error loading saved audios:", error);
+        setAudioError("Could not load saved links from Firestore.");
+      } finally {
+        setAudioLoading(false);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const handleSignIn = async () => {
+    if (!auth || !googleProvider) {
+      setAuthError("Firebase is not configured yet.");
+      return;
+    }
+
+    try {
+      setAuthError(null);
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Google sign-in failed:", error);
+      setAuthError("Google sign-in did not complete. Please try again.");
+    }
   };
 
-  const removeSavedAudio = (id: string) => {
-    setSavedAudios((current) => current.filter((item) => item.id !== id));
+  const handleSignOut = async () => {
+    if (!auth) {
+      return;
+    }
+
+    try {
+      setAuthError(null);
+      await signOut(auth);
+    } catch (error) {
+      console.error("Sign-out failed:", error);
+      setAuthError("Could not sign out right now.");
+    }
+  };
+
+  const addSavedAudio = async (input: CreateSavedAudioInput) => {
+    if (!user) {
+      throw new Error("Sign in before saving audio links.");
+    }
+
+    const saved = await createSavedAudioForUser(user.uid, input);
+    setSavedAudios((current) => [saved, ...current]);
+  };
+
+  const removeSavedAudio = async (id: string) => {
+    try {
+      await deleteSavedAudioForUser(id);
+      setSavedAudios((current) => current.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("Delete failed:", error);
+      setAudioError("Could not remove this saved link.");
+    }
   };
 
   return (
     <div className="app-shell">
       <header className="hero-card">
         <div className="hero-header">
-          <div>
+          <div className="hero-content">
             <p className="eyebrow">Mucals</p>
             <h1>
               Leave music behind. Listen to nasheeds and Quran recitations.
@@ -136,6 +208,14 @@ function App() {
           </div>
           <div className="hero-actions">
             <LocationCard location={location} />
+            <AuthMenu
+              configured={isFirebaseConfigured}
+              loading={authLoading}
+              user={user}
+              error={authError}
+              onSignIn={handleSignIn}
+              onSignOut={handleSignOut}
+            />
             <button
               type="button"
               className="theme-toggle"
@@ -161,11 +241,29 @@ function App() {
           <div className="card-header">
             <h2>Nasheeds & Recitations</h2>
             <p>
-              Save your own source links with categories and reuse them next
-              time.
+              Save your own source links in Firestore and sync them with your
+              account.
             </p>
           </div>
-          <AudioSubmissionForm onAddAudio={addSavedAudio} />
+          <AudioSubmissionForm
+            onAddAudio={addSavedAudio}
+            disabled={!user}
+            helperText={
+              isFirebaseConfigured
+                ? user
+                  ? "Your saved links are stored in your Firebase account."
+                  : "Sign in with Google to save links to your account."
+                : "Firebase keys are missing. Add them in .env.local to enable saving."
+            }
+          />
+          {audioError ? (
+            <p className="audio-error-message">{audioError}</p>
+          ) : null}
+          {audioLoading ? (
+            <div className="audio-empty-state">
+              <p>Loading your saved links...</p>
+            </div>
+          ) : null}
           <AudioList audios={allAudios} onRemoveSavedAudio={removeSavedAudio} />
         </section>
 
