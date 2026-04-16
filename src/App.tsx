@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import AudioList from "./components/AudioList";
+import AudioSubmissionForm from "./components/AudioSubmissionForm";
 import HijriCalendar from "./components/HijriCalendar";
 import LocationCard from "./components/LocationCard";
 import NotesPanel from "./components/NotesPanel";
 import "./App.css";
 import audioData from "./data/sampleAudios";
-import { fetchAllAudio } from "./services/audioService";
-import type { AudioItem } from "./data/sampleAudios";
+import type { AudioItem, SavedAudioLink } from "./data/sampleAudios";
+import {
+  loadSavedAudioLinks,
+  saveSavedAudioLinks,
+} from "./utils/audioSources";
 
 type LocationState = {
   loading: boolean;
@@ -35,13 +39,23 @@ function App() {
   const [showCalendarView, setShowCalendarView] = useState(false);
 
   const [audios, setAudios] = useState<AudioItem[]>(audioData);
-  const [audioLoading, setAudioLoading] = useState(true);
-  const [audioError, setAudioError] = useState<string | null>(null);
+  const [savedAudios, setSavedAudios] = useState<SavedAudioLink[]>(() =>
+    loadSavedAudioLinks(),
+  );
+
+  const allAudios = useMemo(
+    () => [...savedAudios, ...audios],
+    [audios, savedAudios],
+  );
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("mucals-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    saveSavedAudioLinks(savedAudios);
+  }, [savedAudios]);
 
   useEffect(() => {
     const fallbackToIpLocation = async () => {
@@ -95,32 +109,16 @@ function App() {
     );
   }, []);
 
-  // Fetch audio content from APIs
-  useEffect(() => {
-    const loadAudio = async () => {
-      setAudioLoading(true);
-      setAudioError(null);
-      try {
-        const fetchedAudios = await fetchAllAudio();
-        if (fetchedAudios.length > 0) {
-          setAudios(fetchedAudios);
-        } else {
-          setAudios(audioData);
-        }
-      } catch (err) {
-        console.error("Error loading audio:", err);
-        setAudioError("Could not load online audio. Using sample content.");
-        setAudios(audioData);
-      } finally {
-        setAudioLoading(false);
-      }
-    };
-
-    loadAudio();
-  }, []);
-
   const toggleTheme = () =>
     setTheme((current) => (current === "light" ? "dark" : "light"));
+
+  const addSavedAudio = (audio: SavedAudioLink) => {
+    setSavedAudios((current) => [audio, ...current]);
+  };
+
+  const removeSavedAudio = (id: string) => {
+    setSavedAudios((current) => current.filter((item) => item.id !== id));
+  };
 
   return (
     <div className="app-shell">
@@ -162,18 +160,13 @@ function App() {
         <section className="dashboard-card audio-card">
           <div className="card-header">
             <h2>Nasheeds & Recitations</h2>
-            <p>Choose a peaceful audio to listen without distractions.</p>
-          </div>
-          {audioError && (
-            <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-              ⚠️ {audioError}
+            <p>
+              Save your own source links with categories and reuse them next
+              time.
             </p>
-          )}
-          {audioLoading ? (
-            <p style={{ color: "var(--muted)" }}>Loading audio content...</p>
-          ) : (
-            <AudioList audios={audios} />
-          )}
+          </div>
+          <AudioSubmissionForm onAddAudio={addSavedAudio} />
+          <AudioList audios={allAudios} onRemoveSavedAudio={removeSavedAudio} />
         </section>
 
         <section className="dashboard-card calendar-card">

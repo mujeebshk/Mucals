@@ -118,6 +118,129 @@
     gap: 1rem;
 }
 
+.audio-empty-state {
+    padding: 1rem;
+    border-radius: 18px;
+    border: 1px dashed var(--border);
+    background: var(--surface-alt);
+}
+
+.audio-empty-state p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.audio-submission-form {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(15, 23, 42, 0.02));
+}
+
+.audio-form-copy h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+}
+
+.audio-form-copy p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.audio-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+
+.audio-form-grid label {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.audio-form-grid span {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.audio-form-grid input,
+.audio-form-grid select {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.85rem 0.95rem;
+}
+
+.audio-form-grid input:focus,
+.audio-form-grid select:focus {
+    outline: 2px solid rgba(99, 102, 241, 0.22);
+    border-color: rgba(99, 102, 241, 0.42);
+}
+
+.audio-form-full {
+    grid-column: 1 / -1;
+}
+
+.audio-form-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.audio-form-footer p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    flex: 1;
+    min-width: 220px;
+}
+
+.audio-form-footer button,
+.audio-link-btn,
+.audio-remove-btn {
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: white;
+    font-weight: 700;
+    padding: 0.8rem 1rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.audio-form-footer button:hover,
+.audio-link-btn:hover,
+.audio-remove-btn:hover {
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
+.audio-form-success,
+.audio-form-error {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.audio-form-success {
+    color: #15803d;
+}
+
+.audio-form-error {
+    color: #b91c1c;
+}
+
 .audio-item {
     padding: 1rem;
     border-radius: 20px;
@@ -127,6 +250,10 @@
 
 .audio-header {
     margin-bottom: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
 }
 
 .audio-item h3 {
@@ -162,6 +289,17 @@
     text-transform: capitalize;
 }
 
+.audio-provider-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.65rem;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.08);
+    color: var(--text);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 .audio-surah {
     color: var(--text);
     font-weight: 600;
@@ -185,6 +323,48 @@
     margin: 0.5rem 0 0;
     color: var(--secondary);
     font-size: 0.9rem;
+}
+
+.audio-item audio {
+    width: 100%;
+}
+
+.audio-embed-shell {
+    overflow: hidden;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.audio-embed-shell iframe {
+    width: 100%;
+    min-height: 180px;
+    border: 0;
+    display: block;
+}
+
+.audio-external-card {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 1rem;
+    border-radius: 18px;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+}
+
+.audio-external-card p {
+    margin: 0;
+    color: var(--muted);
+    flex: 1;
+    min-width: 220px;
+}
+
+.audio-remove-btn {
+    background: rgba(15, 23, 42, 0.78);
+    padding: 0.6rem 0.85rem;
 }
 
 .hijri-grid,
@@ -527,6 +707,14 @@
         padding: 0.75rem 0 2rem;
     }
 
+    .audio-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .audio-form-full {
+        grid-column: auto;
+    }
+
     .hero-card {
         margin: 0 .5em;
         padding: 0.85rem;
@@ -617,6 +805,10 @@
         border-radius: 12px;
     }
 
+    .audio-header {
+        flex-direction: column;
+    }
+
     .audio-item h3 {
         font-size: 0.9rem;
     }
@@ -643,8 +835,23 @@
         padding: 0.25rem 0.55rem;
     }
 
+    .audio-provider-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.55rem;
+    }
+
     .audio-description {
         font-size: 0.8rem;
+    }
+
+    .audio-form-footer button,
+    .audio-link-btn,
+    .audio-remove-btn {
+        width: 100%;
+    }
+
+    .audio-embed-shell iframe {
+        min-height: 220px;
     }
 
     .hijri-entry {
