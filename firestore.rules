@@ -3,10 +3,119 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /savedAudios/{audioId} {
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.userId;
-      allow read, update, delete: if request.auth != null
+      allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.userId
+        && isValidSavedAudioCreate(request.resource.data);
+      allow read: if isSignedIn()
+        && request.auth.uid == resource.data.userId;
+      allow update: if isSignedIn()
+        && request.auth.uid == resource.data.userId
+        && request.auth.uid == request.resource.data.userId
+        && isValidSavedAudioUpdate(request.resource.data);
+      allow delete: if isSignedIn()
         && request.auth.uid == resource.data.userId;
     }
+  }
+
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isValidSavedAudioCreate(data) {
+    return hasAllowedSavedAudioKeys(data)
+      && hasRequiredSavedAudioKeys(data)
+      && hasValidSavedAudioValues(data);
+  }
+
+  function isValidSavedAudioUpdate(data) {
+    return hasAllowedSavedAudioKeys(data)
+      && hasRequiredSavedAudioKeys(data)
+      && hasValidSavedAudioValues(data);
+  }
+
+  function hasAllowedSavedAudioKeys(data) {
+    return data.keys().hasOnly([
+      'userId',
+      'title',
+      'type',
+      'category',
+      'artist',
+      'description',
+      'sourceUrl',
+      'provider',
+      'playbackMode',
+      'playableUrl',
+      'savedAt',
+    ]);
+  }
+
+  function hasRequiredSavedAudioKeys(data) {
+    return data.keys().hasAll([
+      'userId',
+      'title',
+      'type',
+      'category',
+      'artist',
+      'description',
+      'sourceUrl',
+      'provider',
+      'playbackMode',
+      'savedAt',
+    ]);
+  }
+
+  function hasValidSavedAudioValues(data) {
+    return data.userId is string
+      && data.userId.size() > 0
+      && data.type == 'saved'
+      && isNonEmptyString(data.title, 160)
+      && isValidCategory(data.category)
+      && isNonEmptyString(data.artist, 160)
+      && isNonEmptyString(data.description, 500)
+      && isNonEmptyString(data.sourceUrl, 2000)
+      && isValidProvider(data.provider)
+      && isValidPlaybackMode(data.playbackMode)
+      && isOptionalNonEmptyString(data, 'playableUrl', 2000)
+      && isNonEmptyString(data.savedAt, 64);
+  }
+
+  function isValidCategory(category) {
+    return category in [
+      'peaceful',
+      'inspirational',
+      'evening',
+      'morning',
+      'spiritual',
+    ];
+  }
+
+  function isValidProvider(provider) {
+    return provider in [
+      'direct',
+      'youtube',
+      'spotify',
+      'instagram',
+      'external',
+    ];
+  }
+
+  function isValidPlaybackMode(playbackMode) {
+    return playbackMode in [
+      'audio',
+      'embed',
+      'external',
+    ];
+  }
+
+  function isNonEmptyString(value, maxLength) {
+    return value is string
+      && value.size() > 0
+      && value.size() <= maxLength;
+  }
+
+  function isOptionalNonEmptyString(data, key, maxLength) {
+    return !(key in data)
+      || data[key] == null
+      || isNonEmptyString(data[key], maxLength);
   }
 }

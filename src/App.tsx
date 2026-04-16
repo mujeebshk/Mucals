@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import type { User } from "firebase/auth";
-import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { useMemo, useState } from "react";
 import AudioList from "./components/AudioList";
 import AudioSubmissionForm from "./components/AudioSubmissionForm";
 import AuthMenu from "./components/AuthMenu";
@@ -9,188 +7,27 @@ import LocationCard from "./components/LocationCard";
 import NotesPanel from "./components/NotesPanel";
 import "./App.css";
 import audioData from "./data/sampleAudios";
-import type { SavedAudioLink } from "./data/sampleAudios";
-import { auth, googleProvider, isFirebaseConfigured } from "./lib/firebase";
-import {
-  createSavedAudioForUser,
-  deleteSavedAudioForUser,
-  listSavedAudios,
-} from "./services/savedAudioService";
-import type { CreateSavedAudioInput } from "./utils/audioSources";
-
-type LocationState = {
-  loading: boolean;
-  message: string;
-  latitude?: number;
-  longitude?: number;
-};
+import { useAuth } from "./hooks/useAuth";
+import { useLocation } from "./hooks/useLocation";
+import { useSavedAudios } from "./hooks/useSavedAudios";
+import { useTheme } from "./hooks/useTheme";
 
 function App() {
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window === "undefined") {
-      return "light";
-    }
-    return (
-      (window.localStorage.getItem("mucals-theme") as "light" | "dark") ??
-      "light"
-    );
-  });
-
-  const [location, setLocation] = useState<LocationState>({
-    loading: true,
-    message: "Detecting location...",
-  });
-
   const [showCalendarView, setShowCalendarView] = useState(false);
-
-  const [savedAudios, setSavedAudios] = useState<SavedAudioLink[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(isFirebaseConfigured);
-  const [audioLoading, setAudioLoading] = useState(false);
-  const [audioError, setAudioError] = useState<string | null>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
+  const {
+    user,
+    authLoading,
+    authError,
+    isFirebaseConfigured,
+    signIn,
+    signOut,
+  } = useAuth();
+  const { savedAudios, audioLoading, audioError, addSavedAudio, removeSavedAudio } =
+    useSavedAudios(user);
 
   const allAudios = useMemo(() => [...savedAudios, ...audioData], [savedAudios]);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("mucals-theme", theme);
-  }, [theme]);
-
-  useEffect(() => {
-    const fallbackToIpLocation = async () => {
-      try {
-        const response = await fetch("https://ipapi.co/json/");
-        if (!response.ok) {
-          throw new Error("No IP location available");
-        }
-        const data = await response.json();
-        setLocation({
-          loading: false,
-          message: "Approximate location detected from IP.",
-          latitude: data.latitude,
-          longitude: data.longitude,
-        });
-      } catch (err) {
-        setLocation({
-          loading: false,
-          message: "Unable to fetch location at this time.",
-        });
-      }
-    };
-
-    if (!navigator.geolocation) {
-      setLocation({
-        loading: false,
-        message: "Geolocation is not supported by this browser.",
-      });
-      fallbackToIpLocation();
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          loading: false,
-          message: "Location detected.",
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        console.warn("GPS location failed:", error.message);
-        fallbackToIpLocation();
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000, // 5 minutes
-      },
-    );
-  }, []);
-
-  const toggleTheme = () =>
-    setTheme((current) => (current === "light" ? "dark" : "light"));
-
-  useEffect(() => {
-    if (!auth) {
-      setAuthLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
-      setUser(nextUser);
-      setAuthLoading(false);
-
-      if (!nextUser) {
-        setSavedAudios([]);
-        return;
-      }
-
-      setAudioLoading(true);
-      setAudioError(null);
-
-      try {
-        const items = await listSavedAudios(nextUser.uid);
-        setSavedAudios(items);
-      } catch (error) {
-        console.error("Error loading saved audios:", error);
-        setAudioError("Could not load saved links from Firestore.");
-      } finally {
-        setAudioLoading(false);
-      }
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const handleSignIn = async () => {
-    if (!auth || !googleProvider) {
-      setAuthError("Firebase is not configured yet.");
-      return;
-    }
-
-    try {
-      setAuthError(null);
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error("Google sign-in failed:", error);
-      setAuthError("Google sign-in did not complete. Please try again.");
-    }
-  };
-
-  const handleSignOut = async () => {
-    if (!auth) {
-      return;
-    }
-
-    try {
-      setAuthError(null);
-      await signOut(auth);
-    } catch (error) {
-      console.error("Sign-out failed:", error);
-      setAuthError("Could not sign out right now.");
-    }
-  };
-
-  const addSavedAudio = async (input: CreateSavedAudioInput) => {
-    if (!user) {
-      throw new Error("Sign in before saving audio links.");
-    }
-
-    const saved = await createSavedAudioForUser(user.uid, input);
-    setSavedAudios((current) => [saved, ...current]);
-  };
-
-  const removeSavedAudio = async (id: string) => {
-    try {
-      await deleteSavedAudioForUser(id);
-      setSavedAudios((current) => current.filter((item) => item.id !== id));
-    } catch (error) {
-      console.error("Delete failed:", error);
-      setAudioError("Could not remove this saved link.");
-    }
-  };
 
   return (
     <div className="app-shell">
@@ -213,8 +50,8 @@ function App() {
               loading={authLoading}
               user={user}
               error={authError}
-              onSignIn={handleSignIn}
-              onSignOut={handleSignOut}
+              onSignIn={signIn}
+              onSignOut={signOut}
             />
             <button
               type="button"

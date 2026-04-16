@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { User } from "firebase/auth";
 
 type Props = {
@@ -19,6 +19,8 @@ function AuthMenu({
   onSignOut,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuId = useId();
 
   const initials = useMemo(() => {
     const label = user?.displayName || user?.email || "Admin";
@@ -30,49 +32,90 @@ function AuthMenu({
       .join("");
   }, [user]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const handleSignIn = async () => {
+    await onSignIn();
+    setOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await onSignOut();
+    setOpen(false);
+  };
+
   return (
-    <div className="auth-menu">
+    <div className="auth-menu" ref={menuRef}>
       <button
         type="button"
         className={`auth-avatar-btn ${user ? "signed-in" : ""}`}
         onClick={() => setOpen((current) => !current)}
         title={user ? "Open account menu" : "Open sign-in menu"}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
       >
         <span>{user ? initials || "A" : "?"}</span>
       </button>
 
       {open ? (
-        <div className="auth-dropdown">
+        <div className="auth-dropdown" id={menuId} role="menu">
           {!configured ? (
-            <div className="auth-dropdown-copy">
+            <div className="auth-dropdown-copy" role="status">
               <strong>Firebase not configured</strong>
               <p>Add your Firebase keys in `.env.local` to enable sign-in.</p>
             </div>
           ) : user ? (
             <>
-              <div className="auth-dropdown-copy">
+              <div className="auth-dropdown-copy" role="status">
                 <strong>{user.displayName || "Signed in"}</strong>
                 <p>{user.email || "Google account connected"}</p>
               </div>
               <button
                 type="button"
                 className="auth-dropdown-btn secondary"
-                onClick={onSignOut}
+                onClick={handleSignOut}
+                role="menuitem"
               >
                 Sign Out
               </button>
             </>
           ) : (
             <>
-              <div className="auth-dropdown-copy">
+              <div className="auth-dropdown-copy" role="status">
                 <strong>Admin access</strong>
                 <p>Sign in with Google to sync saved audio links.</p>
               </div>
               <button
                 type="button"
                 className="auth-dropdown-btn"
-                onClick={onSignIn}
+                onClick={handleSignIn}
                 disabled={loading}
+                role="menuitem"
               >
                 {loading ? "Opening..." : "Continue With Google"}
               </button>
