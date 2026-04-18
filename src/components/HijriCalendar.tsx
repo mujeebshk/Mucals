@@ -72,18 +72,21 @@ function HijriCalendar({
     try {
       // Fetch holidays from API
       const response = await fetch(
-        `https://date.nager.at/api/v2/publicholidays/${viewYear}/IN`,
+        `https://date.nager.at/api/v3/PublicHolidays/${viewYear}/IN`,
       );
-      if (response.ok) {
-        const data = await response.json();
+      if (response.ok && response.status !== 204) {
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : [];
         const holidayMap: { [key: string]: string[] } = {};
-        data.forEach((holiday: any) => {
-          const date = new Date(holiday.date);
-          const key = `${date.getMonth() + 1}-${date.getDate()}`;
-          if (!holidayMap[key]) holidayMap[key] = [];
-          holidayMap[key].push(holiday.localName);
-        });
-        setHolidays(holidayMap);
+        if (Array.isArray(data)) {
+          data.forEach((holiday: any) => {
+            const date = new Date(holiday.date);
+            const key = `${date.getMonth() + 1}-${date.getDate()}`;
+            if (!holidayMap[key]) holidayMap[key] = [];
+            holidayMap[key].push(holiday.localName);
+          });
+          setHolidays(holidayMap);
+        }
       } else {
         setHolidays({});
       }
@@ -122,6 +125,8 @@ function HijriCalendar({
       const newCache = new Map(hijriDatesCache);
 
       monthData.forEach((dayEntry: any) => {
+        // Add defensive checks for dayEntry.gregorian and dayEntry.gregorian.day
+        if (!dayEntry || !dayEntry.gregorian || !dayEntry.gregorian.day) return;
         const dayNumber = Number(dayEntry.gregorian.day);
         const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
         newCache.set(dateStr, dayEntry.hijri);
