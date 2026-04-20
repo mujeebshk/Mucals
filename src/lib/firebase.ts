@@ -17,8 +17,12 @@ const firebaseConfig = {
 };
 
 export const isFirebaseConfigured = Object.values(firebaseConfig).every(
-  (value) => typeof value === "string" && value.length > 0,
+  (value) => !!value?.trim(),
 );
+
+console.log("ENV", import.meta.env);
+console.log("Firebase Config", firebaseConfig);
+console.log("Configured", isFirebaseConfigured);
 
 const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 
