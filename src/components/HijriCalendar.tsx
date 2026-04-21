@@ -13,6 +13,7 @@ type HijriDate = {
     number: number;
     en: string;
   };
+  holidays: string[];
   year: string;
 };
 
@@ -32,21 +33,23 @@ function HijriCalendar({
   const [error, setError] = useState<string | null>(null);
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [hijriDatesCache, setHijriDatesCache] = useState<
     Map<string, HijriDate>
   >(new Map());
-  const [cacheUpdate, setCacheUpdate] = useState(0); // Force re-render on cache updates
 
   useEffect(() => {
-    if (!location.latitude || !location.longitude) return;
-
     const fetchHijriDate = async () => {
       setLoading(true);
       setError(null);
 
       try {
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2, "0")}-${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
+
+        // Use the date-specific endpoint which doesn't require location coordinates
         const response = await fetch(
-          `https://api.aladhan.com/v1/gToH?latitude=${location.latitude}&longitude=${location.longitude}&adjustment=0`,
+          `https://api.aladhan.com/v1/gToH/${dateStr}?adjustment=${import.meta.env.VITE_HIJRI_ADJUSTMENT || 0}`,
         );
 
         if (!response.ok) {
@@ -54,7 +57,16 @@ function HijriCalendar({
         }
 
         const data = await response.json();
-        setCurrentHijri(data.data.hijri);
+        const hijriData = data.data.hijri;
+        setCurrentHijri(hijriData);
+
+        // Seed the cache with today's date immediately to prevent "..." in history
+        setHijriDatesCache((prev) => {
+          const newCache = new Map(prev);
+          const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+          newCache.set(dateKey, hijriData);
+          return newCache;
+        });
       } catch (err) {
         setError("Unable to fetch Hijri date");
         console.error("Hijri date fetch error:", err);
@@ -64,7 +76,7 @@ function HijriCalendar({
     };
 
     fetchHijriDate();
-  }, [location.latitude, location.longitude]);
+  }, []);
 
   const [holidays, setHolidays] = useState<{ [key: string]: string[] }>({});
 
@@ -108,36 +120,54 @@ function HijriCalendar({
     return new Date(year, month, 1).getDay();
   };
 
-  const fetchHijriForMonth = async () => {
-    if (!location.latitude || !location.longitude) return;
-
+  const fetchHijriForMonth = async (month: number, year: number) => {
     try {
+      // Use gToHCalendar to convert the whole Gregorian month without requiring location
       const response = await fetch(
-        `https://api.aladhan.com/v1/calendar?latitude=${location.latitude}&longitude=${location.longitude}&method=2&month=${viewMonth + 1}&year=${viewYear}`,
+        `https://api.aladhan.com/v1/gToHCalendar/${month}/${year}?adjustment=${import.meta.env.VITE_HIJRI_ADJUSTMENT || 0}`,
       );
 
       if (!response.ok) {
         throw new Error("Failed to fetch monthly Hijri calendar");
       }
 
-      const data = await response.json();
-      const monthData = data.data || [];
-      const newCache = new Map(hijriDatesCache);
+      const result = await response.json();
+      const monthData = result.data || {};
 
-      monthData.forEach((dayEntry: any) => {
-        // Add defensive checks for dayEntry.gregorian and dayEntry.gregorian.day
-        if (!dayEntry || !dayEntry.gregorian || !dayEntry.gregorian.day) return;
-        const dayNumber = Number(dayEntry.gregorian.day);
-        const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
-        newCache.set(dateStr, dayEntry.hijri);
+      // gToHCalendar returns a keyed object (e.g., {"1": {...}, "2": {...}}).
+      // We convert it to an array so we can iterate over it.
+      const dataArray = Array.isArray(monthData)
+        ? monthData
+        : Object.values(monthData);
+
+      setHijriDatesCache((prev) => {
+        const newCache = new Map(prev);
+        dataArray.forEach((dayEntry: any) => {
+          if (!dayEntry?.gregorian?.date) return;
+          // API returns DD-MM-YYYY, we convert to YYYY-MM-DD for easier keys
+          const [d, m, y] = dayEntry.gregorian.date.split("-");
+          const dateStr = `${y}-${m}-${d}`;
+          newCache.set(dateStr, dayEntry.hijri);
+        });
+        return newCache;
       });
-
-      setHijriDatesCache(newCache);
-      setCacheUpdate((prev) => prev + 1);
     } catch (err) {
       console.error("Error fetching Hijri month data:", err);
     }
   };
+
+  // Effect to handle history and current month synchronization
+  useEffect(() => {
+    const now = new Date();
+    fetchHijriForMonth(now.getMonth() + 1, now.getFullYear());
+
+    // If early in the month, fetch previous month for the 7-day history
+    if (now.getDate() < 8) {
+      const prev = new Date();
+      prev.setMonth(now.getMonth() - 1);
+      fetchHijriForMonth(prev.getMonth() + 1, prev.getFullYear());
+    }
+  }, []);
 
   const calendarDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(viewYear, viewMonth);
@@ -157,16 +187,10 @@ function HijriCalendar({
 
   // Load Hijri dates for the selected month using the calendar API
   useEffect(() => {
-    if (!showCalendarView || !location.latitude || !location.longitude) return;
+    if (!showCalendarView) return;
 
-    fetchHijriForMonth();
-  }, [
-    showCalendarView,
-    viewYear,
-    viewMonth,
-    location.latitude,
-    location.longitude,
-  ]);
+    fetchHijriForMonth(viewMonth + 1, viewYear);
+  }, [showCalendarView, viewYear, viewMonth]);
 
   const history = useMemo(() => {
     if (!currentHijri) return [];
@@ -174,9 +198,9 @@ function HijriCalendar({
     return Array.from({ length: 7 }, (_, index) => {
       const date = new Date();
       date.setDate(date.getDate() - index);
+      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-      const hijriDay = parseInt(currentHijri.day) - index;
-      const adjustedDay = hijriDay > 0 ? hijriDay : hijriDay + 30;
+      const hijri = hijriDatesCache.get(dateKey);
 
       return {
         dateLabel: date.toLocaleDateString(undefined, {
@@ -184,10 +208,10 @@ function HijriCalendar({
           month: "short",
           day: "numeric",
         }),
-        hijriLabel: `${adjustedDay} ${currentHijri.month.en}`,
+        hijriLabel: hijri ? `${hijri.day} ${hijri.month.en}` : "...",
       };
     });
-  }, [currentHijri]);
+  }, [currentHijri, hijriDatesCache]);
 
   const monthNames = [
     "January",
@@ -204,22 +228,8 @@ function HijriCalendar({
     "December",
   ];
 
-  const hijriMonthNames = [
-    "Muharram",
-    "Safar",
-    "Rabi' al-awwal",
-    "Rabi' al-thani",
-    "Jumada al-awwal",
-    "Jumada al-thani",
-    "Rajab",
-    "Sha'ban",
-    "Ramadan",
-    "Shawwal",
-    "Dhu al-Qi'dah",
-    "Dhu al-Hijjah",
-  ];
-
   const handlePrevMonth = () => {
+    setSelectedDay(null);
     if (viewMonth === 0) {
       setViewMonth(11);
       setViewYear(viewYear - 1);
@@ -229,6 +239,7 @@ function HijriCalendar({
   };
 
   const handleNextMonth = () => {
+    setSelectedDay(null);
     if (viewMonth === 11) {
       setViewMonth(0);
       setViewYear(viewYear + 1);
@@ -240,51 +251,6 @@ function HijriCalendar({
   const getHijriDate = (day: number) => {
     const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return hijriDatesCache.get(dateStr);
-  };
-
-  const convertGregorianToHijri = (day: number) => {
-    const date = new Date(viewYear, viewMonth, day);
-
-    const d = date.getDate();
-    const m = date.getMonth() + 1;
-    const y = date.getFullYear();
-
-    const a = Math.floor((14 - m) / 12);
-    const y2 = y + 4800 - a;
-    const m2 = m + 12 * a - 3;
-    const jdn =
-      d +
-      Math.floor((153 * m2 + 2) / 5) +
-      365 * y2 +
-      Math.floor(y2 / 4) -
-      Math.floor(y2 / 100) +
-      Math.floor(y2 / 400) -
-      32045;
-
-    let islamic = jdn - 1948440 + 10632;
-    const n = Math.floor((islamic - 1) / 10631);
-    islamic = islamic - 10631 * n + 354;
-    const j =
-      Math.floor((10985 - islamic) / 5316) *
-        Math.floor((50 * islamic) / 17719) +
-      Math.floor(islamic / 5670) * Math.floor((43 * islamic) / 15238);
-    islamic =
-      islamic -
-      Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) -
-      Math.floor(j / 16) +
-      29;
-    const month = Math.floor((24 * islamic) / 709);
-    const dayHijri = islamic - Math.floor((709 * month) / 24);
-    const yearHijri = 30 * n + j - 30;
-
-    return {
-      day: String(dayHijri),
-      month: {
-        number: month,
-        en: hijriMonthNames[month - 1] || "",
-      },
-      year: String(yearHijri),
-    };
   };
 
   const getHolidaysForDate = (day: number) => {
@@ -333,10 +299,13 @@ function HijriCalendar({
               </h4>
               <h5 className="hijri-month">
                 {(() => {
-                  const firstDayHijri = convertGregorianToHijri(1);
+                  const firstDayHijri = getHijriDate(1);
                   const lastDay = getDaysInMonth(viewYear, viewMonth);
-                  const lastDayHijri = convertGregorianToHijri(lastDay);
-                  if (firstDayHijri.month.en === lastDayHijri.month.en) {
+                  const lastDayHijri = getHijriDate(lastDay);
+                  if (!firstDayHijri || !lastDayHijri) return "...";
+                  if (
+                    firstDayHijri.month.number === lastDayHijri.month.number
+                  ) {
                     return `${firstDayHijri.month.en} ${firstDayHijri.year}`;
                   } else {
                     return `${firstDayHijri.month.en} - ${lastDayHijri.month.en} ${firstDayHijri.year}`;
@@ -367,38 +336,34 @@ function HijriCalendar({
             <div className="calendar-dates">
               {calendarDays.map((day, idx) => {
                 const hijri = day ? getHijriDate(day) : null;
-                const derivedHijri = day ? convertGregorianToHijri(day) : null;
-                const holidays = day ? getHolidaysForDate(day) : [];
+                const gregorianHolidays = day ? getHolidaysForDate(day) : [];
+                const hasEvents =
+                  day !== null &&
+                  ((hijri?.holidays?.length ?? 0) > 0 ||
+                    gregorianHolidays.length > 0);
                 const isToday =
+                  day !== null &&
                   day === new Date().getDate() &&
                   viewMonth === new Date().getMonth() &&
                   viewYear === new Date().getFullYear();
-
-                const displayHijri = hijri || derivedHijri;
+                const isSelected = day !== null && day === selectedDay;
 
                 return (
                   <div
                     key={`date-${idx}`}
-                    className={`date-cell ${day === null ? "empty" : ""} ${isToday ? "today" : ""}`}
+                    className={`date-cell ${day === null ? "empty" : ""} ${isToday ? "today" : ""} ${hasEvents ? "has-event" : ""} ${isSelected ? "selected" : ""}`}
+                    onClick={() => day !== null && setSelectedDay(day)}
                   >
                     {day && (
                       <>
-                        <div className="gregorian-date">{day}</div>
-                        {displayHijri && (
-                          <div className="hijri-date">
-                            {displayHijri.day}{" "}
-                            {/* {displayHijri.month.en.slice(0, 3)} */}
-                          </div>
+                        <span className="gregorian-date">{day}</span>
+                        {hijri && (
+                          <span className="hijri-date">{hijri.day}</span>
                         )}
-                        {holidays.length > 0 && (
-                          <div className="holidays">
-                            {holidays.map((holiday, i) => (
-                              <div key={i} className="holiday-name">
-                                {holiday}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <div
+                          className={`event-indicator ${hasEvents ? "visible" : ""} ${isSelected ? "active" : ""}`}
+                          aria-hidden="true"
+                        />
                       </>
                     )}
                   </div>
@@ -406,6 +371,44 @@ function HijriCalendar({
               })}
             </div>
           </div>
+
+          {selectedDay && (
+            <div className="calendar-event-details">
+              <div className="details-header">
+                <span>
+                  {selectedDay} {monthNames[viewMonth]} {viewYear}{" "}
+                </span>
+                {getHijriDate(selectedDay) && (
+                  <span className="details-hijri">
+                    ({getHijriDate(selectedDay)?.day}{" "}
+                    {getHijriDate(selectedDay)?.month.en})
+                  </span>
+                )}
+              </div>
+              <div className="details-content">
+                {(getHijriDate(selectedDay)?.holidays?.length ?? 0) === 0 &&
+                getHolidaysForDate(selectedDay).length === 0 ? (
+                  <p className="no-events">No specific events for this day.</p>
+                ) : (
+                  <>
+                    {getHijriDate(selectedDay)?.holidays?.map((h, i) => (
+                      <div key={`detail-h-${i}`} className="event-item islamic">
+                        <span className="event-icon">🌙</span> {h}
+                      </div>
+                    ))}
+                    {getHolidaysForDate(selectedDay).map((h, i) => (
+                      <div
+                        key={`detail-g-${i}`}
+                        className="event-item gregorian"
+                      >
+                        <span className="event-icon">📅</span> {h}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="hijri-grid">
