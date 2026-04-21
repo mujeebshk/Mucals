@@ -88,7 +88,11 @@ function AudioSubmissionForm({
             type="text"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Quiet recitation for evening"
+            placeholder={
+              disabled
+                ? "Firebase not configured"
+                : "Quiet recitation for evening"
+            }
             disabled={disabled || submitting}
           />
         </label>

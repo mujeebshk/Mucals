@@ -10,6 +10,7 @@ import audioData from "./data/sampleAudios";
 import { useAuth } from "./hooks/useAuth";
 import { useLocation } from "./hooks/useLocation";
 import { useSavedAudios } from "./hooks/useSavedAudios";
+import { useNotes } from "./hooks/useNotes";
 import { useTheme } from "./hooks/useTheme";
 
 function App() {
@@ -24,10 +25,21 @@ function App() {
     signIn,
     signOut,
   } = useAuth();
-  const { savedAudios, audioLoading, audioError, addSavedAudio, removeSavedAudio } =
-    useSavedAudios(user);
+  const {
+    savedAudios,
+    audioLoading,
+    audioError,
+    addSavedAudio,
+    removeSavedAudio,
+  } = useSavedAudios(user);
 
-  const allAudios = useMemo(() => [...savedAudios, ...audioData], [savedAudios]);
+  const { notes, notesLoading, notesError, addNote, updateNote, removeNote } =
+    useNotes(user);
+
+  const allAudios = useMemo(
+    () => [...savedAudios, ...audioData],
+    [savedAudios],
+  );
 
   return (
     <div className="app-shell">
@@ -84,12 +96,10 @@ function App() {
           </div>
           <AudioSubmissionForm
             onAddAudio={addSavedAudio}
-            disabled={!user}
+            disabled={!isFirebaseConfigured}
             helperText={
               isFirebaseConfigured
-                ? user
-                  ? "Your saved links are stored in your Firebase account."
-                  : "Sign in with Google to save links to your account."
+                ? "Your links are saved locally and synced when you sign in."
                 : "Firebase keys are missing. Add them in .env.local to enable saving."
             }
           />
@@ -134,7 +144,15 @@ function App() {
             <h2>Quiet Notes</h2>
             <p>Write anything you want in a distraction-free space.</p>
           </div>
-          <NotesPanel />
+          <NotesPanel
+            notes={notes}
+            loading={notesLoading}
+            error={notesError}
+            onAdd={addNote}
+            onUpdate={updateNote}
+            onDelete={removeNote}
+            disabled={!isFirebaseConfigured}
+          />
         </section>
       </main>
     </div>
