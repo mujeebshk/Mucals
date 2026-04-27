@@ -19,8 +19,19 @@ function AuthMenu({
   onSignOut,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
+
+  const avatarUrl = useMemo(() => {
+    return (
+      user?.photoURL ||
+      user?.providerData.find((profile) => profile.photoURL)?.photoURL ||
+      null
+    );
+  }, [user]);
+
+  const showAvatarImage = Boolean(user && avatarUrl && !avatarFailed);
 
   const initials = useMemo(() => {
     const label = user?.displayName || user?.email || "Admin";
@@ -31,6 +42,10 @@ function AuthMenu({
       .map((part) => part[0]?.toUpperCase() ?? "")
       .join("");
   }, [user]);
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [avatarUrl]);
 
   useEffect(() => {
     if (!open) {
@@ -79,7 +94,16 @@ function AuthMenu({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
       >
-        <span>{user ? initials || "A" : "?"}</span>
+        {showAvatarImage ? (
+          <img
+            src={avatarUrl ?? ""}
+            alt={user?.displayName ? `${user.displayName} avatar` : "Account avatar"}
+            referrerPolicy="no-referrer"
+            onError={() => setAvatarFailed(true)}
+          />
+        ) : (
+          <span>{user ? initials || "A" : "?"}</span>
+        )}
       </button>
 
       {open ? (
@@ -91,6 +115,18 @@ function AuthMenu({
             </div>
           ) : user ? (
             <>
+              <div className="auth-dropdown-profile">
+                {showAvatarImage ? (
+                  <img
+                    src={avatarUrl ?? ""}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarFailed(true)}
+                  />
+                ) : (
+                  <span>{initials || "A"}</span>
+                )}
+              </div>
               <div className="auth-dropdown-copy" role="status">
                 <strong>{user.displayName || "Signed in"}</strong>
                 <p>{user.email || "Google account connected"}</p>

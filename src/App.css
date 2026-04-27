@@ -148,14 +148,24 @@
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    letter-spacing: 0.03em;
+    letter-spacing: 0;
     box-shadow: 0 10px 24px var(--shadow);
+    overflow: hidden;
+    padding: 0;
 }
 
 .auth-avatar-btn.signed-in {
     background: linear-gradient(135deg, var(--accent), #0f766e);
     color: white;
     border-color: transparent;
+}
+
+.auth-avatar-btn img,
+.auth-dropdown-profile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .auth-dropdown {
@@ -171,6 +181,20 @@
     z-index: 20;
     display: grid;
     gap: 0.85rem;
+}
+
+.auth-dropdown-profile {
+    width: 58px;
+    height: 58px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--accent), #0f766e);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    overflow: hidden;
 }
 
 .auth-dropdown-copy strong,
